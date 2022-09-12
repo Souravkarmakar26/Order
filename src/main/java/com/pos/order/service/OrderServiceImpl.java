@@ -1,10 +1,13 @@
 package com.pos.order.service;
 
-import java.net.http.HttpHeaders;
+
 import java.util.Arrays;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -18,42 +21,45 @@ import com.pos.order.repository.OrderRepository;
 
 @Service
 public class OrderServiceImpl implements OrderService{
+	
+	private static Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
 
 	@Autowired
 	private OrderRepository or;
-	private RestTemplate restTemplate = new RestTemplate();
+	@Autowired
+	private RestTemplate restTemplate;
+	
 	
 	@Override
 	public Order saveOrder(Order order) {
 		calculatingTotalPrice(order);
 		calculatingDiscount(order);
-		order.setProductIdList(order.getProductIdList());
+		log.info("Final order - "+order);
 		return or.save(order);
 	}
 
 	@Override
 	public Order updateOrder(Order order) {
 		calculatingDiscount(order);
+		log.info("Final order update - "+order);
 		return or.save(order);
 	}
 	
 	private Products[] fetchProductList(){
-		System.out.println("rest called");
+		log.info("Rest call to Product for product list");
 		org.springframework.http.HttpHeaders hs = new org.springframework.http.HttpHeaders();
 		hs.setContentType(MediaType.APPLICATION_JSON);
 		HttpEntity<String> entity = new HttpEntity<>(hs);
 		ResponseEntity<Products[]> response = restTemplate.exchange("http://localhost:8080/productList", HttpMethod.GET,
 				entity, Products[].class);
-		System.out.println(response.getBody());
-		return response.getBody();//(List<Products>) restTemplate.getForObject("http://localhost:8080/productList",Products.class);
+		log.info("Rest call to Product Response "+response.getBody());
+		return response.getBody();
 	}
 	
 	private void calculatingTotalPrice(Order order) {
 		double totalPrice = 0; 
 		List<Integer> productIdList = Arrays.asList(order.getProductIdList());
 		List<Products> products = Arrays.asList(fetchProductList());
-		System.out.println("----product id list from order - "+productIdList);
-		System.out.println("----product id list from products - "+products);
 		for(Integer l : productIdList) {
 			for(Products product : products) {
 				if(l == product.getProductID()) {
@@ -61,7 +67,6 @@ public class OrderServiceImpl implements OrderService{
 				}
 			}
 		}
-		System.out.println("totalPrice--->"+totalPrice);
 		order.setTotalAmount(totalPrice);
 	}
 	
@@ -75,8 +80,7 @@ public class OrderServiceImpl implements OrderService{
 			}else if(order.getSubscriptionId().equals("SUP03")) {
 				totalPrice = order.getTotalAmount()-order.getTotalAmount()*15/100;
 			}
-		}		
-		System.out.println("totalPrice discount--->"+totalPrice);
+		}
 		order.setTotalAmount(totalPrice);
 	}
 
@@ -86,3 +90,4 @@ public class OrderServiceImpl implements OrderService{
 	}
 
 }
+
