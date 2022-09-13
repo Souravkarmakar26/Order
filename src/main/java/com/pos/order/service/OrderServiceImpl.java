@@ -51,9 +51,9 @@ public class OrderServiceImpl implements OrderService{
 		if(fetchOrder==null)
 			throw new Exception("Order not found -"+order.getOrderId());
 		fetchOrder.setSubscriptionId(subscriptionId);
-		calculatingDiscount(order);
-		log.info("Final order update - "+order);
-		return or.save(order);
+		calculatingDiscount(fetchOrder);
+		log.info("Final order update - "+fetchOrder);
+		return or.save(fetchOrder);
 	}
 	
 	private Products[] fetchProductList(){
