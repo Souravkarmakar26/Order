@@ -3,6 +3,7 @@ package com.pos.order.service;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,7 @@ import com.pos.order.repository.OrderRepository;
 public class OrderServiceImpl implements OrderService{
 	
 	private static Logger log = LoggerFactory.getLogger(OrderServiceImpl.class);
+	private final String subscriptionIdList[]= {"SUP01","SUP02","SUP03"};
 
 	@Autowired
 	private OrderRepository or;
@@ -31,7 +33,7 @@ public class OrderServiceImpl implements OrderService{
 	
 	
 	@Override
-	public Order saveOrder(Order order) {
+	public Order saveOrder(Order order) throws Exception {
 		calculatingTotalPrice(order);
 		calculatingDiscount(order);
 		log.info("Final order - "+order);
@@ -39,7 +41,16 @@ public class OrderServiceImpl implements OrderService{
 	}
 
 	@Override
-	public Order updateOrder(Order order) {
+	public Order updateOrder(Order order) throws Exception {
+		String subscriptionId=order.getSubscriptionId();
+		if(null==subscriptionId)
+			throw new Exception("Please provide SubscriptionId");
+		if(!Arrays.asList(subscriptionIdList).contains(subscriptionId))
+			throw new Exception("Invalid SubscriptionId -" +subscriptionId);
+		Order fetchOrder=getOrder(order.getOrderId());
+		if(fetchOrder==null)
+			throw new Exception("Order not found -"+order.getOrderId());
+		fetchOrder.setSubscriptionId(subscriptionId);
 		calculatingDiscount(order);
 		log.info("Final order update - "+order);
 		return or.save(order);
@@ -56,23 +67,37 @@ public class OrderServiceImpl implements OrderService{
 		return response.getBody();
 	}
 	
-	private void calculatingTotalPrice(Order order) {
+	private void calculatingTotalPrice(Order order) throws Exception {
+		
+		log.info("calculating total price");
 		double totalPrice = 0; 
+		boolean productFound=true;
 		List<Integer> productIdList = Arrays.asList(order.getProductIdList());
 		List<Products> products = Arrays.asList(fetchProductList());
 		for(Integer l : productIdList) {
 			for(Products product : products) {
 				if(l == product.getProductID()) {
 					totalPrice = totalPrice+product.getPrice();
+					productFound=true;
+					break;
+				}
+				else {
+					productFound=false;
 				}
 			}
+			if(!productFound)
+				throw new Exception("Invalid Product Id -"+l);
 		}
 		order.setTotalAmount(totalPrice);
+		log.info("calculating total price end");
+		
 	}
 	
-	private void calculatingDiscount(Order order) {
+	private void calculatingDiscount(Order order) throws Exception {
 		double totalPrice = order.getTotalAmount(); 
 		if(order.getSubscriptionId() != null) {
+			if(!Arrays.asList(subscriptionIdList).contains(order.getSubscriptionId()))
+				throw new Exception("Invalid SubscriptionId -" +order.getSubscriptionId());
 			if(order.getSubscriptionId().equals("SUP01")) {
 				totalPrice = order.getTotalAmount()-order.getTotalAmount()*5/100;
 			}else if(order.getSubscriptionId().equals("SUP02")) {
@@ -87,6 +112,14 @@ public class OrderServiceImpl implements OrderService{
 	@Override
 	public List<Order> fetchOrderList() {
 		return (List<Order>) or.findAll();
+	}
+
+	@Override
+	public Order getOrder(long orderId) {
+		// TODO Auto-generated method stub
+		Order order;
+		order=or.findById(orderId).orElse(null);
+		return order;
 	}
 
 }
