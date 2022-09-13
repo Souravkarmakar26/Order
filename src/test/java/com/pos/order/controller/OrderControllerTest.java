@@ -41,7 +41,7 @@ public class OrderControllerTest {
 	}
 	
 	@Test
-	public void test_saveOrder()
+	public void test_saveOrder() throws Exception
 	{	ResponseEntity<String> re= new ResponseEntity<String>(HttpStatus.CREATED);
 		Order order= new Order();
 		order.setOrderId(101L);
@@ -51,12 +51,25 @@ public class OrderControllerTest {
 	}
 	
 	@Test
-	public void test_updateOrder()
+	public void test_updateOrder() throws Exception
 	{	ResponseEntity<String> re= new ResponseEntity<String>(HttpStatus.ACCEPTED);
 		Order order= new Order();
 		order.setOrderId(101L);
 		order.setSubscriptionId("SUP03");
 		order.setTotalAmount(300.00);	
 		assertEquals(re,controller.updateOrder(order));
+	}
+	@Test(expected = Exception.class)
+	public void test_getOrder() throws Exception
+	{	
+		ResponseEntity<String> re= new ResponseEntity<String>(HttpStatus.ACCEPTED);
+		Order order= new Order();
+		long id = 101;
+		order.setSubscriptionId("SUP03");
+		order.setTotalAmount(300.00);	
+		Integer[] productIdList = {2, 1, 7, 6, 4, 2, 9};
+		order.setProductIdList(productIdList);
+		//Mockito.when(orderService.getOrder(id)).thenReturn(order);
+		assertEquals(re,controller.getOrder(id));
 	}
 }

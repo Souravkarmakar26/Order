@@ -46,8 +46,8 @@ public class OrderServiceImplTest {
 	 * @Mock Order order;
 	 */
 	
-	@Test
-	public  void saveOrder() {
+	@Test(expected = Exception.class)
+	public  void saveOrder() throws Exception {
 		Order order = new Order();
 		Products products = new Products();
 		order.setOrderId((long) 100);
@@ -74,8 +74,8 @@ public class OrderServiceImplTest {
 	
 		
 	}
-	@Test
-	public  void updateOrder() {
+	@Test(expected = Exception.class)
+	public  void updateOrder() throws Exception {
 		Order order = new Order();
 		Products products = new Products();
 		order.setOrderId((long) 100);
